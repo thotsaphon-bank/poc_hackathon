@@ -40,8 +40,7 @@ class ProfileFragment : Fragment(), ProfileController.Listener {
     }
 
     override fun onSelectUser(user: User) {
-        AppData.users = AppData.users.map { it.copy(isSelected = user.id == it.id) }
-
+        AppData.changeSelectUser(user)
         controller.setData(AppData.users, this)
     }
 }
