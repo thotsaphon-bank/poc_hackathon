@@ -18,3 +18,15 @@ data class Price(
     val discount: Double,
     val final: Double
 ) : Parcelable
+
+fun GetProductResponse.toProduct() = with(data) {
+    Product(
+        id = id,
+        sku = sku,
+        name = name,
+        imageUrl = images.firstOrNull()?.url ?: "",
+        price = with(price.minimumPrice) {
+            Price(regularPrice.value, discount.value, finalPrice.value)
+        }
+    )
+}
