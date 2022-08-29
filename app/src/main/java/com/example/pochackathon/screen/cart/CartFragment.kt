@@ -5,6 +5,7 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import com.example.pochackathon.R
 import com.example.pochackathon.databinding.FragmentCartBinding
 import com.example.pochackathon.model.Product
@@ -49,6 +50,7 @@ class CartFragment : Fragment(), CartController.Listener {
     private fun setupOnClickView() {
         binding.checkoutTextView.setOnClickListener {
             AppData.checkout()
+            Toast.makeText(requireContext(), "ชำระเงินเรียบร้อย", Toast.LENGTH_SHORT).show()
             updateView()
         }
     }

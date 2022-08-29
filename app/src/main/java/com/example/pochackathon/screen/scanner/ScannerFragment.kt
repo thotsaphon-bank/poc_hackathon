@@ -5,21 +5,32 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.Toast
-import androidx.lifecycle.lifecycleScope
 import com.example.pochackathon.databinding.FragmentScannerBinding
 import com.example.pochackathon.preset.AppData
 import com.example.pochackathon.source.Api
+import com.google.zxing.Result
 import kotlinx.coroutines.*
+import me.dm7.barcodescanner.zxing.ZXingScannerView
 
-class ScannerFragment : Fragment() {
+class ScannerFragment : Fragment(), ZXingScannerView.ResultHandler {
     private lateinit var binding: FragmentScannerBinding
+    private var scannerView: ZXingScannerView? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         binding = FragmentScannerBinding.inflate(layoutInflater)
+        scannerView = ZXingScannerView(requireContext()).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+            setAspectTolerance(0.5f)
+        }
+        binding.scannerView.addView(scannerView)
 
         return binding.root
     }
@@ -32,6 +43,24 @@ class ScannerFragment : Fragment() {
 
     private fun setupView() {
         setupButton()
+        startScannerView()
+    }
+
+    private fun startScannerView() {
+        scannerView?.setResultHandler(this@ScannerFragment)
+        scannerView?.startCamera()
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        startScannerView()
+    }
+
+    override fun onPause() {
+        super.onPause()
+
+        scannerView?.stopCamera()
     }
 
     private fun setupButton() {
@@ -42,9 +71,13 @@ class ScannerFragment : Fragment() {
         binding.addToCartButton.isEnabled = false
 
         val barcode = binding.barcodeEditText.text?.toString() ?: return
-        val sku = AppData.getSku(requireContext(), barcode) ?: return
+        val sku = getSku(barcode) ?: return
 
         addProductToCart(sku)
+    }
+
+    private fun getSku(barcode: String): String? {
+        return AppData.getSku(requireContext(), barcode)
     }
 
     private fun addProductToCart(sku: String) {
@@ -57,18 +90,27 @@ class ScannerFragment : Fragment() {
                 toast("ไม่พบสินค้า กรุณาลองใหม่")
             }
         }.invokeOnCompletion {
-            cleanAndEnabledButton()
+            handleAddedToCart()
         }
     }
 
-    private fun cleanAndEnabledButton() {
+    private fun handleAddedToCart() {
         with(binding) {
-            barcodeEditText.text.clear()
             addToCartButton.isEnabled = true
+            barcodeEditText.text.clear()
+
+            startScannerView()
         }
     }
 
     private fun toast(message: String) {
         Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+    }
+
+    override fun handleResult(result: Result?) {
+        val barcode = result?.text ?: return
+
+        binding.barcodeEditText.setText(barcode)
+        binding.addToCartButton.performClick()
     }
 }
